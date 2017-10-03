@@ -5,6 +5,7 @@ using Microsoft.Xrm.Sdk.Query;
 using Microsoft.Xrm.Tooling.Connector;
 using SolutionExportFixer.Model;
 using SolutionExportFixer.Resolvers;
+using Microsoft.Crm.Sdk.Messages;
 
 namespace SolutionExportFixer
 {
@@ -40,11 +41,19 @@ namespace SolutionExportFixer
                     var result = resolver.Resolve(item.ToEntity<SolutionComponent>());
                     Console.WriteLine(result.Name);
                 }
-                catch
+                catch(Exception ex)
                 {
                     //attribute is missing, remove it from solution
                     Console.WriteLine($"Object { item.GetAttributeValue<Guid>("objectid")} is missing. Removing from the solution.");
-                    orgService.Delete("solutioncomponent", item.Id);
+
+                    var removeSolutionComponent = new RemoveSolutionComponentRequest()
+                    {
+                        ComponentId = item.GetAttributeValue<Guid>("objectid"),
+                        ComponentType = item.GetAttributeValue<OptionSetValue>("componenttype").Value,
+                        SolutionUniqueName = solutionUniqueName
+                    };
+
+                    orgService.Execute(removeSolutionComponent);
                 }
             }
         }
